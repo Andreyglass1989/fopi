@@ -1,0 +1,11 @@
+*.pyc
+*.pyo
+.idea/
+__pycache__
+venv
+media_files
+static
+migrations
+settings.py
+constant.py
+db.sqlite3
