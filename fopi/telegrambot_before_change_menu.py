@@ -10,17 +10,16 @@ from telebot import types #Подключили дополнения
 from telegram_bot_pagination import InlineKeyboardPaginator
 # from telbot.apple import second_level_iphone, second_level_apple, second_level_uzhivani_iphone
 from django.core.exceptions import ObjectDoesNotExist
-import telbot.constant
+import constant
 
 import django
-import os, sys
+import os
 
-sys.path.append('/home/adminfopi/django/fopi')
-os.environ['DJANGO_SETTINGS_MODULE']='fopi.settings'
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'fopi.settings')
 django.setup()
 
 
-from telbot.models import (
+from models import (
     Client, ClientReward, Order, 
     OrderProduct, CategoryDescription, 
     ProductToCategory, CategoryPath,
@@ -171,13 +170,9 @@ def sec_level_iphone_1(message):
     for s in sc:
         list_l.append(s)
     for i in range(0, len(list_l), 2):
-        try:
-            b1 = types.InlineKeyboardButton(text=list_l[i].category.categor.first().name, callback_data=list_l[i].category_id) #, callback_data=list_uzh[i].category_id)
-            b2 = types.InlineKeyboardButton(text=list_l[i+1].category.categor.first().name, callback_data=list_l[i+1].category_id) #, callback_data=list_uzh[i+1].category_id)
-            user_markup.row(b1, b2)
-        except IndexError:
-            b1 = types.InlineKeyboardButton(text=list_l[i].category.categor.first().name, callback_data=list_l[i].category_id)
-            user_markup.row(b1)
+        b1 = types.InlineKeyboardButton(text=list_l[i].category.categor.first().name, callback_data=list_l[i].category_id) #, callback_data=list_uzh[i].category_id)
+        b2 = types.InlineKeyboardButton(text=list_l[i+1].category.categor.first().name, callback_data=list_l[i+1].category_id) #, callback_data=list_uzh[i+1].category_id)
+        user_markup.row(b1, b2)
     bot.send_message(message.from_user.id, 'Обери модель', reply_markup=user_markup)
 
 
@@ -395,30 +390,20 @@ def just_func(crw):
 
 @bot.message_handler(commands=['get_order'])
 def get_order_list(message, page=1):
-    #connect to Data Base SQLite
-    conn = sqlite3.connect('db.sqlite3')
-    bd = conn.cursor()
-    #write var's in BD(table users)
-
-    bd.execute('SELECT * FROM users WHERE chat_id={};'.format(message.chat.id))
-    t = bd.fetchall()
-    # phone='0500199890'
-    phone=t[0][5]
-    # print(phone)
+    # print(message)
+    # contact(message)
+    global phone
+    print(phone)
     # phone='0500199890'
     string_all = ''
     try:
         c = Client.objects.filter(telephone__icontains=phone).first()
-        # print(c)
-        if c != None:
-            crw = Order.objects.filter(client_id=c).exclude(order_status_id=0).order_by('-date_added')
-            
-            count_number_page, obj_in_massages = just_func(crw)
-            count_number_page_start = (page-1) * obj_in_massages
-            count_number_page_end = obj_in_massages*page -1        
-            send_order_page(message, page, count_number_page, crw[count_number_page_start:count_number_page_end])
-        else:
-            bot.send_message(message.chat.id, 'Упс🙊 ти не зареєстрований в бонусній програмі Fopi. Це легко виправити реєструйся за посиланням 👉 https://fopi.ua/create-account 👈 а потім повертайся до бота. \n \n⌛️ Я почекаю. \n \n❗️Реєструй той номер в якому в тебе є телеграм. Так нам буде простіше спілкуватись')
+        crw = Order.objects.filter(client_id=c).exclude(order_status_id=0).order_by('-date_added')
+        
+        count_number_page, obj_in_massages = just_func(crw)
+        count_number_page_start = (page-1) * obj_in_massages
+        count_number_page_end = obj_in_massages*page -1        
+        send_order_page(message, page, count_number_page, crw[count_number_page_start:count_number_page_end])
 
     except Client.DoesNotExist:
         bot.send_message(message.chat.id, 'Упс🙊 ти не зареєстрований в бонусній програмі Fopi. Це легко виправити реєструйся за посиланням 👉 https://fopi.ua/create-account 👈 а потім повертайся до бота. \n \n⌛️ Я почекаю. \n \n❗️Реєструй той номер в якому в тебе є телеграм. Так нам буде простіше спілкуватись')
@@ -441,11 +426,11 @@ def send_order_page(message, page=1, order_count=0, crw=None):
             total = round(crw1.total*crw1.currency_value, 2)
             # url = 'https://api.telegram.org/bot'+API+'/sendMessage?chat_id='+ str(message.chat.id) + '&text='+str(crw1.order_id)
             # string_1 = "<a href='%s'>"%(url)  + str(crw1.order_id) + "</a>. Добавлен: " + crw1.date_added.strftime("%d.%m.%y") + "\n К-во.: " + str(crw1.orderproduct_set.count()) + ". Итого: $%s" %(total)
-            string_1 = "🗓" + crw1.date_added.strftime("%d.%m.%y") +  "🧾№ " + str(crw1.order_id) + " - сума - %s %s" %(total, crw1.currency_code)+ "\n"
+            string_1 = "🗓" + crw1.date_added.strftime("%d.%m.%y") +  "🧾№ " + "<a href='https://api.telegram.org/bot5576706434:AAHFT78UcKFHXW3F2XBjvg76TOZStIYzXCw/sendMessage?chat_id=355503529&text=Всем привет!'>" + str(crw1.order_id) + "</a> - сума - %s %s" %(total, crw1.currency_code)+ "\n"
         else:
             total = round(crw1.total*crw1.currency_value)
             # url = 'https://api.telegram.org/bot'+API+'/sendMessage?chat_id='+ str(message.chat.id) + '&text='+str(crw1.order_id)
-            string_1 = "🗓" + crw1.date_added.strftime("%d.%m.%y") +  "🧾№ " + str(crw1.order_id) + " - сума - %s %s" %(total, crw1.currency_code)+ "\n"
+            string_1 = "🗓" + crw1.date_added.strftime("%d.%m.%y") +  "🧾№ " + "<a href='https://api.telegram.org/bot5576706434:AAHFT78UcKFHXW3F2XBjvg76TOZStIYzXCw/sendMessage?chat_id=355503529&text=Всем привет!'>" + str(crw1.order_id) + "</a> - сума - %s %s" %(total, crw1.currency_code)+ "\n"
 
         # print(url)
         string_all = string_all + "\n" + string_1
@@ -476,6 +461,7 @@ def order_page_callback(call):
 @bot.message_handler(commands=['stop'])
 def stop(message):
     sent3 = bot.send_message(message.chat.id, 'bye')
+    print(sent3)
 
 
 def sec_level_catalog(message):
